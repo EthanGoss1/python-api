@@ -1,0 +1,2 @@
+flask_restful==0.3.10
+flask-cors==5.0.0
