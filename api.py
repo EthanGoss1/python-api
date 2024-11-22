@@ -1,4 +1,4 @@
-from flask import Flask, request, Response
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 import tempfile
 import os
@@ -13,21 +13,24 @@ CORS(app)
 def home():
     return '<h1>Flask Grader API</h1>'
 
-@app.route('/grade', methods=['POST', "GET"])
+@app.route('/grade', methods=['POST'])
 def grade():
-    # raw_text = request.data.decode('utf-8')
-
     if 'cppfile' not in request.files:
         return Response('Missing .cpp file', status=400, mimetype='text/plain')
 
     cpp_file = request.files['cppfile']
-    # input_file = request.files['txtfile']
-    response_obj = {}
+
+    body = json.loads(request.form.get('json_body', '{}'))
+
+    response_obj = {
+        "out": ''
+    }
+    print('Grading...')
+    print(body)
 
     with tempfile.TemporaryDirectory() as tempdir:
         cpp_path = os.path.join(tempdir, 'program.cpp')
         exe_path = os.path.join(tempdir, 'program.exe')
-        input_path = os.path.join(tempdir, 'input.txt')
 
         # input_file.save(input_path)
         cpp_file.save(cpp_path)
@@ -35,24 +38,28 @@ def grade():
         compile_process = subprocess.run(['g++', cpp_path, '-o', exe_path], capture_output=True, text=True)
         if compile_process.returncode != 0:
             return Response(f'Compilation failed: {compile_process.stderr}', status=400, mimetype='text/plain')
+        
+        print('compiled')
 
-        run_process = subprocess.run([exe_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if run_process.returncode != 0:
-            return Response(f'Execution failed: {run_process.stderr}', status=400, mimetype='text/plain')
+        for input in body:
+            input_text = body[input]
+            print(input)
+            print(input_text)
+            process = subprocess.run([exe_path],
+                                  input=input,
+                                  text=True,
+                                  capture_output=True)
+            
+            print(f'process code: {process.returncode}')
 
-        output = run_process.stdout
-        # with open(input_path, 'r') as f:
-        #     input_content = f.read()
-
-        #     response_obj = {
-        #         "out": output,
-        #         "in":  input_content
-        #     }
-
-        response_obj = {
-            "out": output
-        }
-    return Response(json.dumps(response_obj), mimetype='application/json')
+            if process.returncode != 0:
+                return Response(f'Execution failed: {process.stderr}', 
+                              status=400, mimetype='text/plain')
+            print('finished executing for input')
+            response_obj = {
+                "out": process.stdout
+            }
+    return Response(json.dumps(response_obj), mimetype='application/json', status=200)
 
     # return f'<h2>Grading...</h2><br/><p></p>'
 

@@ -9,6 +9,17 @@ void main() {
   runApp(const MyApp());
 }
 
+Future<XFile?> selectFile({List<String> allowedFileTypes = const []}) async {
+  final XFile? file = await openFile(
+    acceptedTypeGroups: [
+      XTypeGroup(
+        extensions: allowedFileTypes,
+      ),
+    ],
+  );
+  return file;
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -46,11 +57,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
       // Create a multipart request
       var request = http.MultipartRequest(
-          'POST', Uri.parse('http://10.1.190.238:6589/grade'));
+          'POST', Uri.parse('http://10.15.16.38:6589/grade'));  
       request.files.add(http.MultipartFile.fromBytes('cppfile', bytes,
           filename: file.name,
           contentType: MediaType('application', 'octet-stream')));
 
+      Map<String, String> inputBody = {
+        "1\n2\n3": "1\n4\n9"
+      };
+
+      request.fields["json_body"] = jsonEncode(inputBody);
       // Send the request
       var response = await request.send();
 
@@ -73,26 +89,9 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> _pickFiles() async {
-    final XFile? file = await openFile(
-      acceptedTypeGroups: [
-        const XTypeGroup(
-          label: 'C++ Files',
-          extensions: ['cpp'],
-        ),
-      ],
-    );
-    if (file != null) {
-      setState(() {
-        _selectedFiles = true;
-        filePath = file.name;
-        selectedFile = file;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    XFile? response;
     return Scaffold(
       appBar: AppBar(
         title: const Text('File Upload Example'),
@@ -112,7 +111,14 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _disabled ? null : _pickFiles,
+              onPressed: _disabled ? null : () async => {
+                response = await selectFile(allowedFileTypes: ['cpp']),
+                setState(() {
+                  _selectedFiles = true;
+                  filePath = response!.name;
+                  selectedFile = response;
+                })
+              },
               child: const Text('Select File'),
             ),
             const SizedBox(height: 16),
@@ -125,6 +131,49 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+class InputOutputFileRow extends StatefulWidget {
+  String? inputFilePath;
+  String? outputFilePath;
+
+  InputOutputFileRow({
+    super.key,
+  });
+
+  @override
+  State<InputOutputFileRow> createState() => _InputOutputFileRowState();
+}
+
+class _InputOutputFileRowState extends State<InputOutputFileRow> {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: TextEditingController(text: widget.inputFilePath),
+            decoration: const InputDecoration(
+              labelText: "Select Input File",
+              border: OutlineInputBorder(),
+            ),
+            readOnly: true,
+          ),
+        ),
+        const SizedBox(width: 16),
+        ElevatedButton(
+          onPressed: () async {
+            final XFile? response = await selectFile(allowedFileTypes: ['cpp']);
+            setState(() {
+              widget.inputFilePath = response!.name;
+            });
+          },
+          child: const Text('Select File'),
+        ),
+      ],
     );
   }
 }
