@@ -57,13 +57,33 @@ class _MyHomePageState extends State<MyHomePage> {
 
       // Create a multipart request
       var request = http.MultipartRequest(
-          'POST', Uri.parse('http://10.15.16.38:6589/grade'));  
+          'POST', Uri.parse('http://10.1.10.201:6589/grade'));  
       request.files.add(http.MultipartFile.fromBytes('cppfile', bytes,
           filename: file.name,
           contentType: MediaType('application', 'octet-stream')));
 
+      //below is the example of sending test object with multiline string for this problem: https://open.kattis.com/problems/bigtruck
+      //here is the solution for the problem: https://github.com/JonSteinn/Kattis-Solutions/blob/master/src/Big%20Truck/C%2B%2B/main.cpp
+      //
+      //I understand that you might not have capability for multiline strings directly but you can just include escape characters like \n
+      //and program will still run correctly 
+      //so we map test input to expected output, please feel free to tag me on discord and ask me to explain if you have any questions
+
+      //last note, use "json_body" as key for the body of the request and "cppfile" as key for the file because these names areused to access the data on server side
+
       Map<String, String> inputBody = {
-        "1\n2\n3": "1\n4\n9"
+        '''6
+1 1 2 3 1 0
+7
+1 2 2
+2 3 3
+3 6 4
+1 4 4
+4 3 2
+4 5 3
+5 6 2
+''': '''9 5''',
+'2\n5 5\n0': 'impossible',
       };
 
       request.fields["json_body"] = jsonEncode(inputBody);

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, Response
+from flask import Flask, request, Response
 from flask_cors import CORS
 import tempfile
 import os
@@ -15,18 +15,19 @@ def home():
 
 @app.route('/grade', methods=['POST'])
 def grade():
+    # whoever is calling this API should send a .cpp file with name 'cppfile', see flutter code for example
     if 'cppfile' not in request.files:
         return Response('Missing .cpp file', status=400, mimetype='text/plain')
 
     cpp_file = request.files['cppfile']
 
+    #we also expect a json body with inputs:outputs to the program where each entry is a test case, see flutter code for example
+
+
     body = json.loads(request.form.get('json_body', '{}'))
 
     response_obj = {
-        "out": ''
     }
-    print('Grading...')
-    print(body)
 
     with tempfile.TemporaryDirectory() as tempdir:
         cpp_path = os.path.join(tempdir, 'program.cpp')
@@ -38,30 +39,24 @@ def grade():
         compile_process = subprocess.run(['g++', cpp_path, '-o', exe_path], capture_output=True, text=True)
         if compile_process.returncode != 0:
             return Response(f'Compilation failed: {compile_process.stderr}', status=400, mimetype='text/plain')
-        
-        print('compiled')
 
         for input in body:
-            input_text = body[input]
-            print(input)
-            print(input_text)
+            expected_output_text = body[input]
             process = subprocess.run([exe_path],
                                   input=input,
                                   text=True,
                                   capture_output=True)
             
-            print(f'process code: {process.returncode}')
+            output_of_program = process.stdout
+
+            print(output_of_program)
 
             if process.returncode != 0:
+                #maybe add errors/failures to response_obj
                 return Response(f'Execution failed: {process.stderr}', 
                               status=400, mimetype='text/plain')
-            print('finished executing for input')
-            response_obj = {
-                "out": process.stdout
-            }
+            response_obj[input] = output_of_program
     return Response(json.dumps(response_obj), mimetype='application/json', status=200)
-
-    # return f'<h2>Grading...</h2><br/><p></p>'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6589, debug=True)
