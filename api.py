@@ -48,6 +48,21 @@ def grade():
                                   capture_output=True)
             
             output_of_program = process.stdout
+            
+            #Allows for error reporting/what happened where
+            #Not sure if it works, wasn't able to get any tests to work
+            if output_of_program == expected_output_text:
+                response_obj[input] = {
+                    'result': 'success',
+                    'expected': expected_output_text,
+                    'actual': output_of_program
+                }
+            else:
+                response_obj[input] = {
+                    'result': 'failure',
+                    'expected': expected_output_text,
+                    'actual': output_of_program
+                }
 
             print(output_of_program)
 
