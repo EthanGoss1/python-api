@@ -35,11 +35,13 @@ def grade():
 
         # input_file.save(input_path)
         cpp_file.save(cpp_path)
-
         compile_process = subprocess.run(['g++', cpp_path, '-o', exe_path], capture_output=True, text=True)
         if compile_process.returncode != 0:
             return Response(f'Compilation failed: {compile_process.stderr}', status=400, mimetype='text/plain')
 
+        #If the use case people want an actual grade:
+        tally=body.size()
+        correct_amt = 0
         for input in body:
             expected_output_text = body[input]
             process = subprocess.run([exe_path],
@@ -49,9 +51,12 @@ def grade():
             
             output_of_program = process.stdout
             
+            if process.returncode != 0:
+                return Response(f'Execution failed: {process.stderr}', 
+                              status=400, mimetype='text/plain')
             #Allows for error reporting/what happened where
-            #Not sure if it works, wasn't able to get any tests to work
             if output_of_program == expected_output_text:
+                correct_amt+=1
                 response_obj[input] = {
                     'result': 'success',
                     'expected': expected_output_text,
@@ -63,14 +68,9 @@ def grade():
                     'expected': expected_output_text,
                     'actual': output_of_program
                 }
-
-            print(output_of_program)
-
-            if process.returncode != 0:
-                #maybe add errors/failures to response_obj
-                return Response(f'Execution failed: {process.stderr}', 
-                              status=400, mimetype='text/plain')
-            response_obj[input] = output_of_program
+        print(response_obj)
+        grade = correct_amt/tally #Calculates the grade as a decimal percentage if needed
+            # response_obj[input] = output_of_program
     return Response(json.dumps(response_obj), mimetype='application/json', status=200)
 
 if __name__ == '__main__':

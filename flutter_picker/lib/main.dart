@@ -57,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
       // Create a multipart request
       var request = http.MultipartRequest(
-          'POST', Uri.parse('http://10.1.10.201:6589/grade'));  
+          'POST', Uri.parse('http://192.168.1.177:6589/grade'));  
       request.files.add(http.MultipartFile.fromBytes('cppfile', bytes,
           filename: file.name,
           contentType: MediaType('application', 'octet-stream')));
