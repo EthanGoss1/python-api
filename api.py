@@ -40,7 +40,7 @@ def grade():
             return Response(f'Compilation failed: {compile_process.stderr}', status=400, mimetype='text/plain')
 
         #If the use case people want an actual grade:
-        tally=body.size()
+        tally=len(body)
         correct_amt = 0
         for input in body:
             expected_output_text = body[input]
@@ -68,9 +68,10 @@ def grade():
                     'expected': expected_output_text,
                     'actual': output_of_program
                 }
-        print(response_obj)
         grade = correct_amt/tally #Calculates the grade as a decimal percentage if needed
-            # response_obj[input] = output_of_program
+        response_obj['grade'] = grade
+        print(response_obj)
+            
     return Response(json.dumps(response_obj), mimetype='application/json', status=200)
 
 if __name__ == '__main__':
