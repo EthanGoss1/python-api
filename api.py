@@ -39,9 +39,6 @@ def grade():
         if compile_process.returncode != 0:
             return Response(f'Compilation failed: {compile_process.stderr}', status=400, mimetype='text/plain')
 
-        #If the use case people want an actual grade:
-        tally=len(body)
-        correct_amt = 0
         
         for input in body:
             expected_output_text = body[input]
@@ -55,23 +52,33 @@ def grade():
                 return Response(f'Execution failed: {process.stderr}', 
                               status=400, mimetype='text/plain')
             #Allows for error reporting/what happened where
-            if output_of_program.strip() == expected_output_text:
-                correct_amt+=1
-            else:
+            if output_of_program.strip() != expected_output_text:
                 failures.append(input)
-        if tally!=0:    
-            grade=correct_amt/tally #Calculates the grade as a decimal percentage if needed
-        else:
-            grade=0
         
         if failures != []:
             response_obj['failures'] = failures
 
-        response_obj['grade'] = grade
+        #Separated grading logic into another function
+        response_obj['grade'] = grading_logic(len(body), failures)
 
         print(response_obj)
             
     return Response(json.dumps(response_obj), mimetype='application/json', status=200)
+
+def grading_logic(length, failures):
+    #If the failures list is empty, return perfect score
+    if(failures !=[]):
+        correct = length - len(failures)
+        #If you got none correct, return 0
+        if correct==0:
+            return 0.0
+        else:
+            #Everything in between
+            gradePercent = correct/length
+            return gradePercent
+    else:
+        return 1.0
+    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6589, debug=True)
