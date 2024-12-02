@@ -53,8 +53,12 @@ def grade():
                               status=400, mimetype='text/plain')
             #Allows for error reporting/what happened where
             if output_of_program.strip() != expected_output_text:
-                failures.append(input)
-        
+                failure = {
+                    'input': input,
+                    'expected_output': expected_output_text,
+                    'output': output_of_program.strip()
+                }
+                failures.append(failure)
         if failures != []:
             response_obj['failures'] = failures
 
