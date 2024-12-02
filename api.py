@@ -28,7 +28,7 @@ def grade():
 
     response_obj = {
     }
-
+    failures = []
     with tempfile.TemporaryDirectory() as tempdir:
         cpp_path = os.path.join(tempdir, 'program.cpp')
         exe_path = os.path.join(tempdir, 'program.exe')
@@ -42,6 +42,7 @@ def grade():
         #If the use case people want an actual grade:
         tally=len(body)
         correct_amt = 0
+        
         for input in body:
             expected_output_text = body[input]
             process = subprocess.run([exe_path],
@@ -49,27 +50,25 @@ def grade():
                                   text=True,
                                   capture_output=True)
             
-            output_of_program = process.stdout
-            
+            output_of_program = process.stdout            
             if process.returncode != 0:
                 return Response(f'Execution failed: {process.stderr}', 
                               status=400, mimetype='text/plain')
             #Allows for error reporting/what happened where
-            if output_of_program == expected_output_text:
+            if output_of_program.strip() == expected_output_text:
                 correct_amt+=1
-                response_obj[input] = {
-                    'result': 'success',
-                    'expected': expected_output_text,
-                    'actual': output_of_program
-                }
             else:
-                response_obj[input] = {
-                    'result': 'failure',
-                    'expected': expected_output_text,
-                    'actual': output_of_program
-                }
-        grade = correct_amt/tally #Calculates the grade as a decimal percentage if needed
+                failures.append(input)
+        if tally!=0:    
+            grade=correct_amt/tally #Calculates the grade as a decimal percentage if needed
+        else:
+            grade=0
+        
+        if failures != []:
+            response_obj['failures'] = failures
+
         response_obj['grade'] = grade
+
         print(response_obj)
             
     return Response(json.dumps(response_obj), mimetype='application/json', status=200)
