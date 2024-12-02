@@ -59,6 +59,7 @@ def grade():
                     'output': output_of_program.strip()
                 }
                 failures.append(failure)
+                
         if failures != []:
             response_obj['failures'] = failures
 
